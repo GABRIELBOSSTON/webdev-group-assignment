@@ -1,20 +1,2805 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Webdev Group Assignment</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRAXAI — Intelligent Traffic Enforcement System</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg-base: #050c18;
+      --bg-panel: #080f1e;
+      --bg-card: #0c1628;
+      --bg-card2: #0f1d35;
+      --accent: #00d4ff;
+      --accent2: #ff6b35;
+      --accent3: #00ff88;
+      --accent4: #ffd700;
+      --border: rgba(0, 212, 255, 0.15);
+      --border-bright: rgba(0, 212, 255, 0.4);
+      --text-primary: #e8f4ff;
+      --text-secondary: rgba(232, 244, 255, 0.55);
+      --text-dim: rgba(232, 244, 255, 0.3);
+      --red: #ff3b5c;
+      --yellow: #ffd700;
+      --green: #00ff88;
+      --grid-color: rgba(0, 212, 255, 0.04);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background: var(--bg-base);
+      color: var(--text-primary);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(var(--grid-color) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(5, 12, 24, 0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 60px;
+    }
+
+    .nav-logo {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: var(--accent);
+      letter-spacing: 3px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.2
+      }
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 0 1.2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .nav-links a:hover,
+    .nav-links a.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: rgba(0, 212, 255, 0.04);
+    }
+
+    .nav-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent3);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent3);
+      animation: blink 2s infinite;
+    }
+
+    /* PAGES */
+    .page {
+      display: none;
+      padding-top: 60px;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    /* HERO */
+    .hero {
+      min-height: calc(100vh - 60px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      position: relative;
+    }
+
+    .hero-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(0, 212, 255, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 212, 255, 0.08);
+      border: 1px solid var(--border-bright);
+      padding: 6px 16px;
+      border-radius: 100px;
+      font-size: 0.72rem;
+      font-family: 'Space Mono', monospace;
+      color: var(--accent);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 2rem;
+    }
+
+    .hero h1 {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(2.2rem, 5vw, 4rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 1rem;
+      background: linear-gradient(135deg, #ffffff 0%, var(--accent) 60%, #0088ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-sub {
+      font-size: 1.05rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      width: 100%;
+      max-width: 700px;
+      border: 1px solid var(--border);
+      background: var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 3rem;
+    }
+
+    .hero-stat {
+      background: var(--bg-card);
+      padding: 1.5rem 1rem;
+      text-align: center;
+    }
+
+    .hero-stat .num {
+      font-family: 'Orbitron', monospace;
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--accent);
+      display: block;
+      line-height: 1;
+    }
+
+    .hero-stat .lbl {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      margin-top: 6px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      padding: 14px 32px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .btn-primary:hover {
+      background: #33ddff;
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--accent);
+      padding: 14px 32px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border: 1px solid var(--border-bright);
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .btn-ghost:hover {
+      background: rgba(0, 212, 255, 0.06);
+    }
+
+    .hero-btns {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* FEATURES STRIP */
+    .features-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border);
+    }
+
+    .feat-item {
+      padding: 2rem;
+      border-right: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+
+    .feat-item:last-child {
+      border-right: none;
+    }
+
+    .feat-item:hover {
+      background: rgba(0, 212, 255, 0.03);
+    }
+
+    .feat-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+
+    .feat-item h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .feat-item p {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ARCHITECTURE */
+    .arch-section {
+      padding: 4rem 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .section-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .section-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--accent);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .section-header h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 0.8rem;
+    }
+
+    .section-header p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .arch-flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0;
+      position: relative;
+    }
+
+    .arch-step {
+      text-align: center;
+      padding: 1.5rem 1rem;
+      position: relative;
+    }
+
+    .arch-step::after {
+      content: '→';
+      position: absolute;
+      right: -10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent);
+      font-size: 1.2rem;
+      opacity: 0.6;
+    }
+
+    .arch-step:last-child::after {
+      display: none;
+    }
+
+    .arch-icon {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      border: 1px solid var(--border-bright);
+      background: var(--bg-card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 1rem;
+      transition: all 0.3s;
+    }
+
+    .arch-step:hover .arch-icon {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: var(--accent);
+    }
+
+    .arch-step h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .arch-step p {
+      font-size: 0.7rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* DASHBOARD PAGE */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr 300px;
+      grid-template-rows: auto 1fr auto;
+      height: calc(100vh - 60px);
+      gap: 0;
+    }
+
+    .dash-sidebar {
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+      overflow-y: auto;
+      grid-row: 1/3;
+    }
+
+    .sidebar-section {
+      padding: 0 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .sidebar-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 0 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+
+    .sidebar-item:hover {
+      background: rgba(0, 212, 255, 0.06);
+      color: var(--text-primary);
+    }
+
+    .sidebar-item.active {
+      background: rgba(0, 212, 255, 0.1);
+      color: var(--accent);
+    }
+
+    .sidebar-item .icon {
+      font-size: 1rem;
+      width: 20px;
+      text-align: center;
+    }
+
+    .sidebar-item .badge {
+      margin-left: auto;
+      background: var(--red);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 100px;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .sidebar-item .badge.green {
+      background: var(--green);
+      color: #000;
+    }
+
+    .cctv-list {
+      padding: 0 1rem;
+    }
+
+    .cctv-cam {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-bottom: 3px;
+    }
+
+    .cctv-cam:hover {
+      background: rgba(0, 212, 255, 0.04);
+    }
+
+    .cam-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+
+    .cam-dot.live {
+      background: var(--green);
+      animation: blink 2s infinite;
+    }
+
+    .cam-dot.offline {
+      background: #555;
+    }
+
+    .cctv-cam .cam-name {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .cctv-cam .cam-id {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    .dash-main {
+      overflow-y: auto;
+      background: var(--bg-base);
+      padding: 1.5rem;
+    }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+
+    .dash-title {
+      font-family: 'Orbitron', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .dash-time {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    .kpi-card.red::before {
+      background: var(--red);
+    }
+
+    .kpi-card.cyan::before {
+      background: var(--accent);
+    }
+
+    .kpi-card.green::before {
+      background: var(--green);
+    }
+
+    .kpi-card.yellow::before {
+      background: var(--yellow);
+    }
+
+    .kpi-card:hover {
+      border-color: var(--border-bright);
+      background: var(--bg-card2);
+    }
+
+    .kpi-label {
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+
+    .kpi-num {
+      font-family: 'Orbitron', monospace;
+      font-size: 2rem;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .kpi-num.red {
+      color: var(--red);
+    }
+
+    .kpi-num.cyan {
+      color: var(--accent);
+    }
+
+    .kpi-num.green {
+      color: var(--green);
+    }
+
+    .kpi-num.yellow {
+      color: var(--yellow);
+    }
+
+    .kpi-delta {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-top: 4px;
+    }
+
+    .cctv-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .cctv-feed {
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      aspect-ratio: 16/10;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .cctv-feed:hover {
+      border-color: var(--border-bright);
+    }
+
+    .feed-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    .feed-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .feed-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(0, 212, 255, 0.3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      color: var(--accent);
+    }
+
+    .feed-live {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 59, 92, 0.85);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .feed-alert {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      right: 8px;
+      background: rgba(255, 59, 92, 0.9);
+      backdrop-filter: blur(4px);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      display: none;
+    }
+
+    .feed-alert.show {
+      display: block;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(6px);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0);
+        opacity: 1
+      }
+    }
+
+    .charts-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem;
+    }
+
+    .chart-card h4 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .dash-right {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      grid-row: 1/3;
+    }
+
+    .right-header {
+      padding: 1.2rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .right-header .count {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      background: var(--red);
+      color: #fff;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .violation-feed {
+      padding: 0.75rem;
+    }
+
+    .v-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .v-item:hover {
+      border-color: var(--border-bright);
+      background: var(--bg-card2);
+    }
+
+    .v-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .v-plate {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--yellow);
+      background: rgba(255, 215, 0, 0.08);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .v-type {
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 100px;
+    }
+
+    .v-type.park {
+      background: rgba(255, 59, 92, 0.15);
+      color: var(--red);
+      border: 1px solid rgba(255, 59, 92, 0.3);
+    }
+
+    .v-type.lane {
+      background: rgba(255, 107, 53, 0.15);
+      color: var(--accent2);
+      border: 1px solid rgba(255, 107, 53, 0.3);
+    }
+
+    .v-type.ngetem {
+      background: rgba(255, 215, 0, 0.1);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 215, 0, 0.25);
+    }
+
+    .v-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
+
+    .v-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .v-duration {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--red);
+      margin-left: auto;
+    }
+
+    /* MAP PAGE */
+    .map-layout {
+      height: calc(100vh - 60px);
+      display: grid;
+      grid-template-columns: 1fr 340px;
+    }
+
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+
+    .map-sidebar {
+      background: var(--bg-panel);
+      border-left: 1px solid var(--border);
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-controls {
+      padding: 1.2rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .map-controls h3 {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+
+    .filter-group {
+      margin-bottom: 1rem;
+    }
+
+    .filter-label {
+      font-size: 0.68rem;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+      display: block;
+    }
+
+    .filter-chips {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      padding: 5px 12px;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+      font-family: 'DM Sans', sans-serif;
+    }
+
+    .chip:hover {
+      border-color: var(--border-bright);
+      color: var(--text-primary);
+    }
+
+    .chip.active-chip {
+      background: rgba(0, 212, 255, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .hotspot-list {
+      padding: 1rem;
+      flex: 1;
+    }
+
+    .hotspot-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .hotspot-item:hover {
+      border-color: var(--border-bright);
+    }
+
+    .hotspot-rank {
+      font-family: 'Orbitron', monospace;
+      font-size: 0.75rem;
+      font-weight: 900;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .rank-1 {
+      background: rgba(255, 59, 92, 0.2);
+      color: var(--red);
+      border: 1px solid rgba(255, 59, 92, 0.4);
+    }
+
+    .rank-2 {
+      background: rgba(255, 107, 53, 0.2);
+      color: var(--accent2);
+      border: 1px solid rgba(255, 107, 53, 0.4);
+    }
+
+    .rank-3 {
+      background: rgba(255, 215, 0, 0.1);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .rank-other {
+      background: rgba(0, 212, 255, 0.08);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .hotspot-info {
+      flex: 1
+    }
+
+    .hotspot-name {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .hotspot-count {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
+
+    .hotspot-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 4px;
+    }
+
+    .hotspot-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, var(--accent2), var(--red));
+    }
+
+    /* REPORT PAGE */
+    .report-layout {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .report-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    .report-header h2 {
+      font-family: 'Orbitron', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .report-form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 2rem;
+    }
+
+    .form-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .form-header .step-badge {
+      background: rgba(0, 212, 255, 0.1);
+      border: 1px solid var(--border-bright);
+      color: var(--accent);
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+
+    .form-body {
+      padding: 1.5rem;
+      display: grid;
+      gap: 1rem;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-group label {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-family: 'DM Sans', sans-serif;
+      transition: border-color 0.2s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .form-group select {
+      cursor: pointer;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .camera-capture-zone {
+      border: 2px dashed var(--border-bright);
+      border-radius: 10px;
+      padding: 2.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: rgba(0, 212, 255, 0.02);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .camera-capture-zone:hover {
+      border-color: var(--accent);
+      background: rgba(0, 212, 255, 0.04);
+    }
+
+    .camera-capture-zone .icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+      display: block;
+    }
+
+    .camera-capture-zone h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+
+    .camera-capture-zone p {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    .capture-input {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+    }
+
+    .preview-img {
+      width: 100%;
+      max-height: 200px;
+      object-fit: cover;
+      border-radius: 8px;
+      display: none;
+      border: 1px solid var(--border);
+    }
+
+    .validation-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(0, 212, 255, 0.06);
+      border: 1px solid var(--border-bright);
+      color: var(--accent);
+    }
+
+    .geo-tag {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--accent3);
+      margin-top: 6px;
+    }
+
+    .reports-table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-header h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+      font-family: 'Space Mono', monospace;
+    }
+
+    td {
+      padding: 10px 16px;
+      font-size: 0.78rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:hover td {
+      background: rgba(0, 212, 255, 0.02);
+    }
+
+    .status-badge {
+      padding: 3px 10px;
+      border-radius: 100px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .status-verified {
+      background: rgba(0, 255, 136, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+    }
+
+    .status-pending {
+      background: rgba(255, 215, 0, 0.1);
+      color: var(--yellow);
+      border: 1px solid rgba(255, 215, 0, 0.3);
+    }
+
+    .status-rejected {
+      background: rgba(255, 59, 92, 0.1);
+      color: var(--red);
+      border: 1px solid rgba(255, 59, 92, 0.3);
+    }
+
+    /* ANALYTICS PAGE */
+    .analytics-layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+
+    .analytics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+
+    .big-chart-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 16px;
+      margin-bottom: 2rem;
+    }
+
+    .chart-card-big {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .chart-card-big h4 {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      font-weight: 700;
+    }
+
+    .metric-detail {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+
+    .metric-detail h4 {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 1.2rem;
+      font-weight: 700;
+    }
+
+    .metric-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-name {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .metric-val {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .metric-bar-wrap {
+      width: 80px;
+      background: var(--border);
+      border-radius: 2px;
+      height: 4px;
+    }
+
+    .metric-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+    }
+
+    .heatmap-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+
+    .heatmap-cell {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      transition: all 0.2s;
+    }
+
+    .heatmap-cell:hover {
+      transform: scale(1.15);
+    }
+
+    /* ALERT TOAST */
+    .alert-toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--bg-card2);
+      border: 1px solid var(--red);
+      border-left: 4px solid var(--red);
+      border-radius: 10px;
+      padding: 14px 18px;
+      min-width: 300px;
+      z-index: 999;
+      transform: translateX(120%);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 8px 32px rgba(255, 59, 92, 0.2);
+    }
+
+    .alert-toast.show {
+      transform: translateX(0);
+    }
+
+    .alert-toast-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .alert-toast-header strong {
+      font-size: 0.8rem;
+      color: var(--red);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .alert-toast-body {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .alert-toast-plate {
+      font-family: 'Space Mono', monospace;
+      color: var(--yellow);
+      font-weight: 700;
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 212, 255, 0.15);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 212, 255, 0.3);
+    }
+
+    /* PULSE RING */
+    .pulse-ring {
+      position: relative;
+      display: inline-block;
+    }
+
+    .pulse-ring::after {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      animation: pulse-out 1.5s infinite;
+      opacity: 0;
+    }
+
+    @keyframes pulse-out {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.6
+      }
+
+      100% {
+        transform: scale(1.8);
+        opacity: 0
+      }
+    }
+
+    /* LEAFLET custom */
+    .leaflet-container {
+      background: #050c18 !important;
+    }
+
+    .custom-marker {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      border: 2px solid currentColor;
+    }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-card2) !important;
+      border: 1px solid var(--border-bright) !important;
+      border-radius: 10px !important;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    }
+
+    .leaflet-popup-tip {
+      background: var(--bg-card2) !important;
+    }
+
+    .popup-content {
+      font-family: 'DM Sans', sans-serif;
+      padding: 4px;
+      min-width: 200px;
+    }
+
+    .popup-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-primary);
+    }
+
+    .popup-stat {
+      font-size: 0.72rem;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3px;
+    }
+
+    .popup-val {
+      font-family: 'Space Mono', monospace;
+      color: var(--red);
+      font-size: 0.72rem;
+    }
+
+    @media(max-width:1000px) {
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .dash-sidebar,
+      .dash-right {
+        display: none;
+      }
+
+      .kpi-row {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .cctv-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .features-strip {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .arch-flow {
+        grid-template-columns: 1fr;
+      }
+
+      .arch-step::after {
+        display: none;
+      }
+
+      .map-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .map-sidebar {
+        display: none;
+      }
+
+      .analytics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .big-chart-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* MONITOR MODAL */
+    .monitor-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .monitor-modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border-bright);
+      border-radius: 12px;
+      max-width: 900px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(0, 212, 255, 0.15);
+      animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      overflow: hidden;
+    }
+
+    @keyframes modalPop {
+      0% {
+        transform: scale(0.9);
+        opacity: 0
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1
+      }
+    }
+
+    .monitor-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card2);
+    }
+
+    .monitor-close {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+
+    .monitor-close:hover {
+      color: var(--red);
+    }
+
+    .monitor-body {
+      position: relative;
+      width: 100%;
+      background: #000;
+    }
+
+    .monitor-body img {
+      width: 100%;
+      display: block;
+      object-fit: contain;
+      max-height: 60vh;
+    }
+
+    .monitor-scanline {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: rgba(0, 212, 255, 0.4);
+      box-shadow: 0 0 10px rgba(0, 212, 255, 0.8);
+      animation: scanline 3s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes scanline {
+      0% {
+        top: 0
+      }
+
+      100% {
+        top: 100%
+      }
+    }
+
+    .monitor-footer {
+      padding: 1.5rem;
+      display: flex;
+      gap: 3rem;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+    }
+  </style>
 </head>
-<body class="bg-gray-100">
-    <nav class="bg-blue-600 p-4 text-white text-center font-bold text-xl">
-        Student Assignment Portal
-    </nav>
-    <main class="p-8 max-w-4xl mx-auto mt-10 bg-white rounded-lg shadow-md">
-    <h1 class="text-2xl font-bold mb-4">Welcome to Our Project</h1>
-    <p class="text-gray-700">This is the main page of the system developed by our group.</p>
-</main>
+
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">
+      <div class="dot pulse-ring"></div>
+      TRAXAI
+    </div>
+    <div class="nav-links">
+      <a onclick="showPage('home')" class="active" id="nav-home">Overview</a>
+      <a onclick="showPage('dashboard')" id="nav-dashboard">Live Monitor</a>
+      <a onclick="showPage('map')" id="nav-map">Hotspot Map</a>
+      <a onclick="showPage('report')" id="nav-report">Report</a>
+      <a onclick="showPage('analytics')" id="nav-analytics">Analytics</a>
+    </div>
+    <div class="nav-status">
+      <div class="status-dot"></div>
+      <span id="live-clock">00:00:00</span>
+      &nbsp;|&nbsp; 24 CAM ACTIVE
+    </div>
+  </nav>
+
+  <!-- ALERT TOAST -->
+  <div class="alert-toast" id="alertToast">
+    <div class="alert-toast-header">
+      <span>⚠</span>
+      <strong>VIOLATION DETECTED</strong>
+    </div>
+    <div class="alert-toast-body" id="toastBody">
+      Illegal parking confirmed — Plate <span class="alert-toast-plate" id="toastPlate">B 1234 ABC</span><br>
+      Duration: <span id="toastDuration">4m 12s</span> | Jl. Gatot Subroto KM 3
+    </div>
+  </div>
+
+  <!-- ======= HOME PAGE ======= -->
+  <div class="page active" id="page-home">
+    <div class="hero">
+      <div class="hero-glow"></div>
+      <div class="hero-badge">
+        <span>●</span> AI Open Innovation Challenge 2026
+      </div>
+      <h1>Intelligent Traffic<br>Enforcement System</h1>
+      <p class="hero-sub">Transforming passive CCTV infrastructure into a proactive, AI-driven enforcement engine that
+        detects violations, reads license plates, and maps behavior hotspots in real-time.</p>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="num" id="counter-violations">0</span>
+          <div class="lbl">Violations Today</div>
+        </div>
+        <div class="hero-stat">
+          <span class="num" id="counter-plates">0</span>
+          <div class="lbl">Plates Read (ANPR)</div>
+        </div>
+        <div class="hero-stat">
+          <span class="num" id="counter-cams">0</span>
+          <div class="lbl">Cameras Active</div>
+        </div>
+      </div>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="showPage('dashboard')">Open Live Dashboard →</button>
+        <button class="btn-ghost" onclick="showPage('map')">View Hotspot Map</button>
+      </div>
+    </div>
+
+    <div class="features-strip">
+      <div class="feat-item">
+        <div class="feat-icon">🎯</div>
+        <h4>Real-Time Detection</h4>
+        <p>YOLOv8 + ByteTrack detects vehicle violations with temporal tracking. Dynamic framerate scaling from 1fps to
+          30fps upon violation trigger.</p>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">🔢</div>
+        <h4>ANPR / OCR</h4>
+        <p>Automatic Number Plate Recognition using EasyOCR with Perspective Transform correction and Majority Voting
+          across burst frames for high accuracy.</p>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">🗺️</div>
+        <h4>Hotspot Mapping</h4>
+        <p>PostGIS spatial queries generate real-time heatmaps showing violation density. Powers the predictive
+          simulator for officer deployment planning.</p>
+      </div>
+      <div class="feat-item">
+        <div class="feat-icon">👥</div>
+        <h4>Hybrid Crowdsourcing</h4>
+        <p>Citizens submit reports via web portal. AI cross-validates every report with nearest CCTV footage to
+          eliminate fraud before logging violations.</p>
+      </div>
+    </div>
+
+    <!-- Architecture Flow -->
+    <div class="arch-section">
+      <div class="section-header">
+        <span class="section-tag">System Architecture</span>
+        <h2>How It Works</h2>
+        <p>End-to-end AI pipeline from video input to enforcement output</p>
+      </div>
+      <div class="arch-flow">
+        <div class="arch-step">
+          <div class="arch-icon">📹</div>
+          <h4>Input Sources</h4>
+          <p>Live RTSP streams from Dishub CCTVs + E-TLE cameras + citizen web reports</p>
+        </div>
+        <div class="arch-step">
+          <div class="arch-icon">🔍</div>
+          <h4>AI Detection</h4>
+          <p>YOLOv8 vehicle detection, ROI spatial mapping, ByteTrack temporal duration monitoring</p>
+        </div>
+        <div class="arch-step">
+          <div class="arch-icon">🔢</div>
+          <h4>ANPR + OCR</h4>
+          <p>Triggered only upon violation confirm. CLAHE enhancement + Perspective Transform + EasyOCR</p>
+        </div>
+        <div class="arch-step">
+          <div class="arch-icon">🗄️</div>
+          <h4>FastAPI + PostGIS</h4>
+          <p>Celery async workers process AI tasks. PostgreSQL/PostGIS stores spatial-temporal violation data</p>
+        </div>
+        <div class="arch-step">
+          <div class="arch-icon">📊</div>
+          <h4>Dashboard Output</h4>
+          <p>Real-time heatmaps, E-TLE auto-ticketing, and enforcement simulator for officer deployment</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= DASHBOARD PAGE ======= -->
+  <div class="page" id="page-dashboard">
+    <div class="dashboard-layout">
+
+      <!-- LEFT SIDEBAR -->
+      <div class="dash-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-label">Navigation</div>
+          <div class="sidebar-item active"><span class="icon">📊</span> Live Monitor</div>
+          <div class="sidebar-item"><span class="icon">🗺️</span> Hotspot Map</div>
+          <div class="sidebar-item"><span class="icon">📋</span> Violation Log <span class="badge">47</span></div>
+          <div class="sidebar-item"><span class="icon">🎟️</span> E-TLE Queue <span class="badge">12</span></div>
+          <div class="sidebar-item"><span class="icon">👥</span> Reports <span class="badge green">5</span></div>
+        </div>
+        <div class="sidebar-section">
+          <div class="sidebar-label">Camera Status</div>
+        </div>
+        <div class="cctv-list" id="cctv-list"></div>
+      </div>
+
+      <!-- MAIN CONTENT -->
+      <div class="dash-main">
+        <div class="dash-header">
+          <div class="dash-title">LIVE MONITORING CENTER</div>
+          <div class="dash-time" id="dash-time-display">Loading...</div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="kpi-card red">
+            <div class="kpi-label">Active Violations</div>
+            <div class="kpi-num red" id="kpi-active">7</div>
+            <div class="kpi-delta">↑ 3 in last 15 min</div>
+          </div>
+          <div class="kpi-card yellow">
+            <div class="kpi-label">Today Total</div>
+            <div class="kpi-num yellow" id="kpi-today">147</div>
+            <div class="kpi-delta">↑ 18% vs yesterday</div>
+          </div>
+          <div class="kpi-card cyan">
+            <div class="kpi-label">Plates Read</div>
+            <div class="kpi-num cyan" id="kpi-plates">389</div>
+            <div class="kpi-delta">Accuracy: 96.4%</div>
+          </div>
+          <div class="kpi-card green">
+            <div class="kpi-label">Cameras Online</div>
+            <div class="kpi-num green">24<span style="font-size:1rem">/28</span></div>
+            <div class="kpi-delta">4 offline / maintenance</div>
+          </div>
+        </div>
+
+        <!-- CCTV FEEDS -->
+        <div class="cctv-grid">
+          <div class="cctv-feed" id="feed-0" onclick="document.getElementById('feedModal').style.display='flex'">
+            <img class="feed-canvas" src="image/1.webp" style="object-fit:cover; width:100%; height:100%;"
+              alt="YOLO Analysis">
+            <div class="feed-overlay">
+              <div class="feed-badge">CAM-001 · Jl. Gatot Subroto</div>
+              <div class="feed-live">
+                <div class="status-dot" style="background:#fff"></div>LIVE
+              </div>
+            </div>
+          </div>
+          <div class="cctv-feed" id="feed-1">
+            <canvas class="feed-canvas" id="canvas-1"></canvas>
+            <div class="feed-overlay">
+              <div class="feed-badge">CAM-004 · Jl. HR Rasuna Said</div>
+              <div class="feed-live">
+                <div class="status-dot" style="background:#fff"></div>LIVE
+              </div>
+              <div class="feed-alert" id="alert-1">⚠ LANE BUSWAY · D 9921 ZZ · 2m 07s</div>
+            </div>
+          </div>
+          <div class="cctv-feed" id="feed-2">
+            <canvas class="feed-canvas" id="canvas-2"></canvas>
+            <div class="feed-overlay">
+              <div class="feed-badge">CAM-007 · Bundaran HI</div>
+              <div class="feed-live">
+                <div class="status-dot" style="background:#fff"></div>LIVE
+              </div>
+              <div class="feed-alert" id="alert-2"></div>
+            </div>
+          </div>
+          <div class="cctv-feed" id="feed-3">
+            <canvas class="feed-canvas" id="canvas-3"></canvas>
+            <div class="feed-overlay">
+              <div class="feed-badge">CAM-009 · Jl. Sudirman KM2</div>
+              <div class="feed-live">
+                <div class="status-dot" style="background:#fff"></div>LIVE
+              </div>
+              <div class="feed-alert" id="alert-3"></div>
+            </div>
+          </div>
+          <div class="cctv-feed" id="feed-4">
+            <canvas class="feed-canvas" id="canvas-4"></canvas>
+            <div class="feed-overlay">
+              <div class="feed-badge">CAM-011 · Cikarang Industrial Zone</div>
+              <div class="feed-live">
+                <div class="status-dot" style="background:#fff"></div>LIVE
+              </div>
+              <div class="feed-alert" id="alert-4">⚠ PARKIR LIAR · B 8811 KL · 7m 52s</div>
+            </div>
+          </div>
+          <div class="cctv-feed" id="feed-5">
+            <canvas class="feed-canvas" id="canvas-5"></canvas>
+            <div class="feed-overlay">
+              <div class="feed-badge">CAM-014 · Bekasi Timur</div>
+              <div class="feed-live">
+                <div class="status-dot" style="background:#fff"></div>LIVE
+              </div>
+              <div class="feed-alert" id="alert-5"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="charts-row">
+          <div class="chart-card">
+            <h4>Violations per Hour (Today)</h4>
+            <canvas id="hourlyChart" height="100"></canvas>
+          </div>
+          <div class="chart-card">
+            <h4>Violation Type Breakdown</h4>
+            <canvas id="typeChart" height="100"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT PANEL -->
+      <div class="dash-right">
+        <div class="right-header">
+          <span>LIVE VIOLATION FEED</span>
+          <span class="count" id="violation-count">47</span>
+        </div>
+        <div class="violation-feed" id="violation-feed"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======= MAP PAGE ======= -->
+  <div class="page" id="page-map">
+    <div class="map-layout">
+      <div id="map"></div>
+      <div class="map-sidebar">
+        <div class="map-controls">
+          <h3>Hotspot Analysis</h3>
+          <div class="filter-group">
+            <span class="filter-label">Violation Type</span>
+            <div class="filter-chips">
+              <div class="chip active-chip" onclick="toggleChip(this)">All</div>
+              <div class="chip" onclick="toggleChip(this)">Parkir Liar</div>
+              <div class="chip" onclick="toggleChip(this)">Busway Lane</div>
+              <div class="chip" onclick="toggleChip(this)">Ngetem</div>
+            </div>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">Time Range</span>
+            <div class="filter-chips">
+              <div class="chip active-chip" onclick="toggleChip(this)">Today</div>
+              <div class="chip" onclick="toggleChip(this)">Week</div>
+              <div class="chip" onclick="toggleChip(this)">Month</div>
+            </div>
+          </div>
+        </div>
+        <div class="hotspot-list">
+          <div class="sidebar-label" style="padding:0 0.5rem; margin-bottom:0.8rem;">Top Violation Hotspots</div>
+          <!-- Will be rendered by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= REPORT PAGE ======= -->
+  <div class="page" id="page-report">
+    <div class="report-layout">
+      <div class="report-header">
+        <h2>Citizen Violation Report</h2>
+        <div class="nav-status">
+          <div class="status-dot"></div> Portal Active
+        </div>
+      </div>
+
+      <div class="report-form-card">
+        <div class="form-header">
+          <div class="step-badge">1</div>
+          <span>Capture Live Evidence</span>
+          <span style="margin-left:auto;font-size:0.72rem;color:var(--text-dim)">Live capture ensures
+            authenticity</span>
+        </div>
+        <div class="form-body">
+          <div class="camera-capture-zone" id="captureZone">
+            <input type="file" accept="image/*" capture="environment" class="capture-input" id="photoInput"
+              onchange="handlePhoto(event)">
+            <span class="icon">📷</span>
+            <h4>Capture or Upload Photo</h4>
+            <p>Tap to open camera directly. GPS & timestamp will be extracted automatically.</p>
+          </div>
+          <img class="preview-img" id="photoPreview" alt="Preview">
+          <div class="validation-status" id="geoStatus" style="display:none">
+            <span>📍</span>
+            <div>
+              <div>Geotagging extracted successfully</div>
+              <div class="geo-tag" id="geoCoords">-6.2088, 106.8456 · WIB 14:22:07</div>
+            </div>
+            <span style="margin-left:auto;color:var(--accent3)">✓</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="report-form-card">
+        <div class="form-header">
+          <div class="step-badge">2</div>
+          <span>Violation Details</span>
+        </div>
+        <div class="form-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Plate Number (if visible)</label>
+              <input type="text" placeholder="e.g. B 1234 ABC" id="reportPlate"
+                style="text-transform:uppercase; font-family:'Space Mono',monospace; letter-spacing:2px; font-weight:700;">
+            </div>
+            <div class="form-group">
+              <label>Violation Type</label>
+              <select id="reportType">
+                <option value="">-- Select type --</option>
+                <option>Parkir Liar (Illegal Parking)</option>
+                <option>Busway Lane Violation</option>
+                <option>Bicycle Lane Violation</option>
+                <option>Angkot Ngetem (Illegal Stop)</option>
+                <option>Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Location / Landmark</label>
+              <input type="text" placeholder="e.g. Depan Mall Cikarang, Jl. MH Thamrin" id="reportLocation">
+            </div>
+            <div class="form-group">
+              <label>Estimated Duration</label>
+              <select id="reportDuration">
+                <option>
+                  < 3 minutes</option>
+                <option>3 - 10 minutes</option>
+                <option>10 - 30 minutes</option>
+                <option>> 30 minutes</option>
+                <option>Unknown</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Additional Description</label>
+            <textarea
+              placeholder="Describe what you saw — include context like weather, time of day, number of vehicles..."
+              id="reportDesc"></textarea>
+          </div>
+          <button class="btn-primary" onclick="submitReport()" style="width:100%; padding:14px;">Submit Report for AI
+            Validation →</button>
+        </div>
+      </div>
+
+      <div class="reports-table-card">
+        <div class="table-header">
+          <h3>Recent Submissions</h3>
+          <span style="font-size:0.72rem;color:var(--text-dim)">Auto-validated by AI cross-reference</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Time</th>
+              <th>Plate</th>
+              <th>Type</th>
+              <th>Location</th>
+              <th>AI Validation</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="report-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======= ANALYTICS PAGE ======= -->
+  <div class="page" id="page-analytics">
+    <div class="analytics-layout">
+      <div class="section-header" style="text-align:left; margin-bottom:2rem;">
+        <span class="section-tag">Performance Dashboard</span>
+        <h2 style="font-family:'Orbitron',monospace; font-size:1.5rem; font-weight:700;">Analytics & Insights</h2>
+      </div>
+
+      <div class="analytics-grid">
+        <div class="metric-detail">
+          <h4>Detection Accuracy</h4>
+          <div class="metric-row">
+            <span class="metric-name">YOLO Detection</span>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar-fill" style="width:94%;background:var(--accent)"></div>
+            </div>
+            <span class="metric-val">94.2%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">ANPR Accuracy</span>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar-fill" style="width:96%;background:var(--green)"></div>
+            </div>
+            <span class="metric-val">96.4%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">False Positives</span>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar-fill" style="width:3%;background:var(--red)"></div>
+            </div>
+            <span class="metric-val">3.1%</span>
+          </div>
+          <div class="metric-row">
+            <span class="metric-name">Citizen Reports Valid</span>
+            <div class="metric-bar-wrap">
+              <div class="metric-bar-fill" style="width:78%;background:var(--yellow)"></div>
+            </div>
+            <span class="metric-val">78.3%</span>
+          </div>
+        </div>
+        <div class="metric-detail">
+          <h4>System Performance</h4>
+          <div class="metric-row"><span class="metric-name">Avg FPS (idle)</span><span class="metric-val"
+              style="color:var(--accent)">1.2 fps</span></div>
+          <div class="metric-row"><span class="metric-name">Avg FPS (violation)</span><span class="metric-val"
+              style="color:var(--accent)">24 fps</span></div>
+          <div class="metric-row"><span class="metric-name">API Response Time</span><span class="metric-val"
+              style="color:var(--green)">87ms</span></div>
+          <div class="metric-row"><span class="metric-name">Queue Backlog</span><span class="metric-val"
+              style="color:var(--green)">3 jobs</span></div>
+          <div class="metric-row"><span class="metric-name">Uptime (30d)</span><span class="metric-val"
+              style="color:var(--green)">99.1%</span></div>
+        </div>
+        <div class="metric-detail">
+          <h4>Enforcement Impact</h4>
+          <div class="metric-row"><span class="metric-name">E-TLE Issued Today</span><span class="metric-val"
+              style="color:var(--yellow)">89</span></div>
+          <div class="metric-row"><span class="metric-name">Repeat Offenders</span><span class="metric-val"
+              style="color:var(--red)">12</span></div>
+          <div class="metric-row"><span class="metric-name">Reports Validated</span><span class="metric-val"
+              style="color:var(--green)">23/29</span></div>
+          <div class="metric-row"><span class="metric-name">Hotspots Identified</span><span class="metric-val"
+              style="color:var(--accent)">18</span></div>
+          <div class="metric-row"><span class="metric-name">Cameras Monitored</span><span class="metric-val"
+              style="color:var(--accent)">24</span></div>
+        </div>
+      </div>
+
+      <div class="big-chart-row">
+        <div class="chart-card-big">
+          <h4>Weekly Violation Trend by Type</h4>
+          <canvas id="weeklyChart" height="120"></canvas>
+        </div>
+        <div class="chart-card-big">
+          <h4>Violation Heatmap by Hour</h4>
+          <div id="hourHeatmap" style="margin-top:1rem"></div>
+          <div
+            style="display:flex; gap:6px; margin-top:1rem; align-items:center; font-size:0.65rem; color:var(--text-dim);">
+            <span>Low</span>
+            <div style="flex:1;height:6px;border-radius:3px;background:linear-gradient(90deg,#0c1628,#ff6b35,#ff3b5c)">
+            </div>
+            <span>High</span>
+          </div>
+          <div
+            style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;font-size:0.6rem;color:var(--text-dim);text-align:center;">
+            <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card-big" style="margin-bottom:2rem">
+        <h4>Top 10 Hotspot Locations — Violation Frequency</h4>
+        <canvas id="hotspotChart" height="80"></canvas>
+      </div>
+
+      <div class="big-chart-row" style="margin-bottom:2rem">
+        <div class="chart-card-big">
+          <h4>Vehicle Classification Demographics</h4>
+          <div style="height: 200px; position:relative;">
+            <canvas id="demoChart"></canvas>
+          </div>
+        </div>
+
+        <div class="chart-card-big" style="display:flex;flex-direction:column;gap:1rem">
+          <h4 style="margin-bottom: 0.5rem">Edge Processing Telemetry</h4>
+
+          <div style="display:flex;gap:1rem;flex:1">
+            <div
+              style="flex:1;background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.1);border-radius:8px;padding:0.75rem;display:flex;flex-direction:column;justify-content:center;align-items:center">
+              <span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px">EDGE NODE AVG
+                CPU</span>
+              <span
+                style="font-family:'Orbitron',monospace;font-size:1.6rem;color:var(--cyan);font-weight:700">14%</span>
+              <span style="font-size:0.55rem;color:var(--green);margin-top:4px;display:flex;align-items:center;gap:4px">
+                <span class="status-dot" style="background:var(--green);width:5px;height:5px;animation:none"></span> LOW
+                LOAD
+              </span>
+            </div>
+            <div
+              style="flex:1;background:rgba(255,107,53,0.05);border:1px solid rgba(255,107,53,0.1);border-radius:8px;padding:0.75rem;display:flex;flex-direction:column;justify-content:center;align-items:center">
+              <span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px">EDGE GPU
+                USAGE</span>
+              <span
+                style="font-family:'Orbitron',monospace;font-size:1.6rem;color:var(--accent);font-weight:700">62%</span>
+              <span
+                style="font-size:0.55rem;color:var(--accent);margin-top:4px;display:flex;align-items:center;gap:4px">
+                <span class="status-dot" style="background:var(--accent);width:5px;height:5px;animation:none"></span>
+                OPTIMAL YIELD
+              </span>
+            </div>
+          </div>
+          <div style="display:flex;gap:1rem;flex:1">
+            <div
+              style="flex:1;background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.1);border-radius:8px;padding:0.75rem;display:flex;flex-direction:column;justify-content:center;align-items:center">
+              <span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px">SERVER BW
+                SAVED</span>
+              <span
+                style="font-family:'Orbitron',monospace;font-size:1.6rem;color:var(--yellow);font-weight:700">98.2<span
+                  style="font-size:1rem">%</span></span>
+              <span style="font-size:0.5rem;color:var(--text-dim);margin-top:4px;text-align:center">Data sent only on
+                violation</span>
+            </div>
+            <div
+              style="flex:1;background:rgba(76,175,80,0.05);border:1px solid rgba(76,175,80,0.1);border-radius:8px;padding:0.75rem;display:flex;flex-direction:column;justify-content:center;align-items:center">
+              <span style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px">PROCESSING
+                LATENCY</span>
+              <span
+                style="font-family:'Space Mono',monospace;font-size:1.6rem;color:var(--green);font-weight:700">12<span
+                  style="font-size:1rem">ms</span></span>
+              <span style="font-size:0.5rem;color:var(--text-dim);margin-top:4px">Real-time edge analysis</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ============================================================
+    // UTILITIES
+    // ============================================================
+    function showPage(name) {
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+      document.getElementById('page-' + name).classList.add('active');
+      document.getElementById('nav-' + name).classList.add('active');
+      if (name === 'map') initMap();
+      if (name === 'analytics') initAnalyticsCharts();
+      if (name === 'dashboard') initDashboardCharts();
+      if (name === 'report') populateReportTable();
+    }
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      const t = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+      document.getElementById('live-clock').textContent = t;
+      const el = document.getElementById('dash-time-display');
+      if (el) el.textContent = now.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }) + ' · ' + t + ' WIB';
+    }
+    setInterval(updateClock, 1000); updateClock();
+
+    // ============================================================
+    // COUNTER ANIMATION
+    // ============================================================
+    function animateCounter(id, target, duration = 1500) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      let start = 0; const step = target / (duration / 16);
+      const timer = setInterval(() => {
+        start += step;
+        if (start >= target) { el.textContent = target; clearInterval(timer); }
+        else el.textContent = Math.floor(start);
+      }, 16);
+    }
+    setTimeout(() => {
+      animateCounter('counter-violations', 147);
+      animateCounter('counter-plates', 389);
+      animateCounter('counter-cams', 24);
+    }, 500);
+
+    // ============================================================
+    // SIDEBAR CAMERAS
+    // ============================================================
+    const cameras = [
+      { id: 'CAM-001', loc: 'Jl. Gatot Subroto', live: true },
+      { id: 'CAM-002', loc: 'Jl. HR Rasuna Said', live: true },
+      { id: 'CAM-004', loc: 'Bundaran HI', live: true },
+      { id: 'CAM-007', loc: 'Jl. Sudirman KM2', live: true },
+      { id: 'CAM-009', loc: 'Jl. Thamrin', live: true },
+      { id: 'CAM-011', loc: 'Cikarang Industrial', live: true },
+      { id: 'CAM-014', loc: 'Bekasi Timur', live: true },
+      { id: 'CAM-015', loc: 'Jl. Pemuda', live: true },
+      { id: 'CAM-017', loc: 'Jl. Ahmad Yani', live: false },
+      { id: 'CAM-019', loc: 'Jl. Margonda Raya', live: false },
+    ];
+    const cList = document.getElementById('cctv-list');
+    if (cList) {
+      cameras.forEach(c => {
+        cList.innerHTML += `<div class="cctv-cam"><div class="cam-dot ${c.live ? 'live' : 'offline'}"></div><div class="cam-name">${c.loc}</div><div class="cam-id">${c.id}</div></div>`;
+      });
+    }
+
+    // ============================================================
+    // CCTV CANVAS SIMULATION
+    // ============================================================
+    const feedColors = ['#1a2a1a', '#0f1a2a', '#1a1a2a', '#2a1a0f', '#1a0f2a', '#0f2a1a'];
+    const violationAlerts = [true, true, false, false, true, false];
+
+    function drawFeed(canvasId, colorIdx, hasViolation) {
+      const canvas = document.getElementById(canvasId);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const W = canvas.width = canvas.offsetWidth;
+      const H = canvas.height = canvas.offsetHeight;
+
+      let t = 0;
+      function draw() {
+        ctx.fillStyle = feedColors[colorIdx];
+        ctx.fillRect(0, 0, W, H);
+
+        // Road lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 2;
+        for (let x = 0; x < W; x += W / 4) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        ctx.beginPath(); ctx.moveTo(0, H * 0.6); ctx.lineTo(W, H * 0.6); ctx.stroke();
+
+        // Moving vehicles
+        const vCount = 3 + colorIdx % 3;
+        for (let i = 0; i < vCount; i++) {
+          const x = ((t * 0.8 + i * W / vCount) % (W + 80)) - 40;
+          const y = H * 0.35 + i * 18;
+          ctx.fillStyle = i === 0 && hasViolation ? 'rgba(255,59,92,0.7)' : `hsla(${200 + i * 30},60%,60%,0.6)`;
+          ctx.fillRect(x, y, 50, 22);
+          if (i === 0 && hasViolation) {
+            ctx.strokeStyle = 'rgba(255,59,92,0.9)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 3, y - 3, 56, 28);
+            // bbox label
+            ctx.fillStyle = 'rgba(255,59,92,0.9)';
+            ctx.fillRect(x - 3, y - 14, 70, 12);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 7px monospace';
+            ctx.fillText('VIOLATION', x, y - 5);
+          }
+        }
+
+        // Scan line
+        ctx.fillStyle = 'rgba(0,212,255,0.04)';
+        ctx.fillRect(0, (t * 2) % H, W, 3);
+
+        // Timestamp
+        ctx.fillStyle = 'rgba(0,212,255,0.6)'; ctx.font = '8px monospace';
+        ctx.fillText(new Date().toLocaleTimeString('id-ID'), 8, H - 8);
+
+        t++; requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    setTimeout(() => {
+      for (let i = 0; i < 6; i++) {
+        drawFeed('canvas-' + i, i, violationAlerts[i]);
+        setTimeout(() => {
+          const al = document.getElementById('alert-' + i);
+          if (al && violationAlerts[i]) al.classList.add('show');
+        }, 1000 + i * 500);
+      }
+    }, 500);
+
+    // ============================================================
+    // VIOLATION FEED
+    // ============================================================
+    const violationData = [
+      { plate: 'B 3421 XY', type: 'park', typeLabel: 'Parkir Liar', loc: 'Jl. Gatot Subroto', dur: '4m 18s', time: '14:22' },
+      { plate: 'D 9921 ZZ', type: 'lane', typeLabel: 'Busway Lane', loc: 'HR Rasuna Said', dur: '2m 07s', time: '14:19' },
+      { plate: 'B 8811 KL', type: 'park', typeLabel: 'Parkir Liar', loc: 'Cikarang Industrial', dur: '7m 52s', time: '14:15' },
+      { plate: 'F 1122 AA', type: 'ngetem', typeLabel: 'Ngetem', loc: 'Terminal Bekasi', dur: '11m 30s', time: '14:12' },
+      { plate: 'B 5566 PQ', type: 'lane', typeLabel: 'Busway Lane', loc: 'Jl. Sudirman', dur: '1m 45s', time: '14:08' },
+      { plate: 'B 7734 RS', type: 'park', typeLabel: 'Parkir Liar', loc: 'Jl. Thamrin KM1', dur: '9m 00s', time: '14:05' },
+      { plate: 'Z 4422 MN', type: 'ngetem', typeLabel: 'Ngetem', loc: 'Cikarang Dry Port', dur: '6m 15s', time: '14:01' },
+      { plate: 'B 1199 CD', type: 'park', typeLabel: 'Parkir Liar', loc: 'Jl. MH Thamrin', dur: '3m 44s', time: '13:58' },
+      { plate: 'B 2288 EF', type: 'lane', typeLabel: 'Busway Lane', loc: 'Kuningan Barat', dur: '4m 22s', time: '13:55' },
+      { plate: 'D 3377 GH', type: 'park', typeLabel: 'Parkir Liar', loc: 'Jl. Pemuda', dur: '5m 10s', time: '13:50' },
+    ];
+
+    function renderViolationFeed() {
+      const feed = document.getElementById('violation-feed');
+      if (!feed) return;
+      feed.innerHTML = violationData.map(v => `
+    <div class="v-item">
+      <div class="v-item-header">
+        <span class="v-plate">${v.plate}</span>
+        <span class="v-type ${v.type}">${v.typeLabel}</span>
+      </div>
+      <div class="v-meta">
+        <span>📍 ${v.loc}</span>
+        <span>🕐 ${v.time}</span>
+        <span class="v-duration">⏱ ${v.dur}</span>
+      </div>
+    </div>
+  `).join('');
+    }
+    renderViolationFeed();
+
+    // ============================================================
+    // DASHBOARD CHARTS
+    // ============================================================
+    let dashChartsInited = false;
+    function initDashboardCharts() {
+      if (dashChartsInited) return; dashChartsInited = true;
+      const hours = ['06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20'];
+      const vals = [3, 7, 12, 18, 22, 15, 11, 19, 25, 21, 17, 28, 14, 9, 6];
+      const hourlyCtx = document.getElementById('hourlyChart');
+      if (hourlyCtx) new Chart(hourlyCtx, {
+        type: 'line', data: {
+          labels: hours,
+          datasets: [{
+            data: vals, borderColor: '#00d4ff', backgroundColor: 'rgba(0,212,255,0.06)',
+            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#00d4ff'
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } }, scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,255,0.4)', font: { size: 10 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,255,0.4)', font: { size: 10 } } }
+          }
+        }
+      });
+
+      const typeCtx = document.getElementById('typeChart');
+      if (typeCtx) new Chart(typeCtx, {
+        type: 'doughnut', data: {
+          labels: ['Parkir Liar', 'Busway Lane', 'Ngetem', 'Sepeda Lane'],
+          datasets: [{ data: [52, 28, 14, 6], backgroundColor: ['#ff3b5c', '#ff6b35', '#ffd700', '#00d4ff'], borderWidth: 0, hoverOffset: 4 }]
+        },
+        options: { plugins: { legend: { position: 'bottom', labels: { color: 'rgba(232,244,255,0.5)', font: { size: 10 }, boxWidth: 10 } } }, cutout: '65%' }
+      });
+    }
+
+    // ============================================================
+    // ALERT TOAST SIMULATION
+    // ============================================================
+    const toastMessages = [
+      { plate: 'B 3421 XY', dur: '4m 18s', loc: 'Jl. Gatot Subroto' },
+      { plate: 'B 8811 KL', dur: '7m 52s', loc: 'Cikarang Industrial Zone' },
+      { plate: 'F 1122 AA', dur: '11m 30s', loc: 'Terminal Bekasi' },
+    ];
+    let toastIdx = 0;
+    function showToast() {
+      const t = toastMessages[toastIdx % toastMessages.length];
+      document.getElementById('toastPlate').textContent = t.plate;
+      document.getElementById('toastDuration').textContent = t.dur;
+      const toast = document.getElementById('alertToast');
+      toast.querySelector('.alert-toast-body').innerHTML = `Illegal parking confirmed — Plate <span class="alert-toast-plate">${t.plate}</span><br>Duration: ${t.dur} | ${t.loc}`;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 4000);
+      toastIdx++;
+    }
+    setTimeout(showToast, 3000);
+    setInterval(showToast, 12000);
+
+    // ============================================================
+    // MAP
+    // ============================================================
+    let mapInited = false;
+    function initMap() {
+      if (mapInited) return; mapInited = true;
+      const map = L.map('map', { center: [-6.2088, 106.8456], zoom: 12, zoomControl: true });
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO', maxZoom: 19
+      }).addTo(map);
+
+      const hotspots = [
+        { lat: -6.2088, lng: 106.8156, name: 'Jl. Gatot Subroto', count: 87, type: 'Parkir Liar' },
+        { lat: -6.2144, lng: 106.8272, name: 'Bundaran HI', count: 71, type: 'Busway Lane' },
+        { lat: -6.2241, lng: 106.8000, name: 'Jl. HR Rasuna Said', count: 65, type: 'Parkir Liar' },
+        { lat: -6.2387, lng: 106.9800, name: 'Cikarang Industrial Zone', count: 58, type: 'Parkir Liar' },
+        { lat: -6.2374, lng: 106.9926, name: 'Cikarang Dry Port', count: 44, type: 'Ngetem' },
+        { lat: -6.2615, lng: 106.9940, name: 'Bekasi Timur', count: 39, type: 'Parkir Liar' },
+        { lat: -6.2090, lng: 106.8450, name: 'Jl. Sudirman KM2', count: 35, type: 'Busway Lane' },
+        { lat: -6.1805, lng: 106.8272, name: 'Jl. MH Thamrin', count: 29, type: 'Busway Lane' },
+        { lat: -6.3000, lng: 106.8456, name: 'Jl. Pemuda Jakarta', count: 22, type: 'Ngetem' },
+        { lat: -6.2600, lng: 106.7900, name: 'Jl. TB Simatupang', count: 18, type: 'Parkir Liar' },
+      ];
+
+      const colors = { 87: '#ff3b5c', 71: '#ff3b5c', 65: '#ff6b35', 58: '#ff6b35', 44: '#ffd700', 39: '#ffd700', 35: '#00d4ff', 29: '#00d4ff', 22: '#00d4ff', 18: '#00d4ff' };
+
+      hotspots.forEach((h, i) => {
+        const radius = 20 + h.count * 0.5;
+        const col = Object.values(colors)[i] || '#00d4ff';
+        L.circle([h.lat, h.lng], { radius: radius * 12, color: col, fillColor: col, fillOpacity: 0.15, weight: 1 }).addTo(map);
+        const icon = L.divIcon({
+          className: '',
+          html: `<div style="background:${col};color:#000;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:900;border:2px solid #fff;box-shadow:0 0 10px ${col}">${h.count}</div>`,
+          iconSize: [28, 28], iconAnchor: [14, 14]
+        });
+        L.marker([h.lat, h.lng], { icon }).addTo(map).bindPopup(`
+      <div class="popup-content">
+        <div class="popup-title">📍 ${h.name}</div>
+        <div class="popup-stat"><span>Violations Today</span><span class="popup-val">${h.count}</span></div>
+        <div class="popup-stat"><span>Main Type</span><span class="popup-val">${h.type}</span></div>
+        <div class="popup-stat"><span>Rank</span><span class="popup-val">#${i + 1}</span></div>
+      </div>
+    `);
+      });
+
+      // Render hotspot list in sidebar
+      const hList = document.querySelector('.hotspot-list');
+      if (hList) {
+        const sorted = [...hotspots].sort((a, b) => b.count - a.count).slice(0, 8);
+        const max = sorted[0].count;
+        const rankClass = ['rank-1', 'rank-2', 'rank-3'];
+        sorted.forEach((h, i) => {
+          hList.innerHTML += `
+        <div class="hotspot-item" onclick="map.setView([${h.lat},${h.lng}],15)">
+          <div class="hotspot-rank ${rankClass[i] || 'rank-other'}">#${i + 1}</div>
+          <div class="hotspot-info">
+            <div class="hotspot-name">${h.name}</div>
+            <div class="hotspot-count">${h.count} violations · ${h.type}</div>
+            <div class="hotspot-bar"><div class="hotspot-fill" style="width:${h.count / max * 100}%"></div></div>
+          </div>
+        </div>`;
+        });
+      }
+    }
+
+    function toggleChip(el) {
+      el.closest('.filter-chips').querySelectorAll('.chip').forEach(c => c.classList.remove('active-chip'));
+      el.classList.add('active-chip');
+    }
+
+    // ============================================================
+    // REPORT TABLE
+    // ============================================================
+    const reportRows = [
+      { id: 'RPT-0841', time: '14:19', plate: 'B 9876 WX', type: 'Parkir Liar', loc: 'Jl. Sudirman', cctv: 'CAM-009', status: 'verified' },
+      { id: 'RPT-0840', time: '14:11', plate: 'N/A', type: 'Busway Lane', loc: 'HR Rasuna Said', cctv: 'CAM-004', status: 'pending' },
+      { id: 'RPT-0839', time: '13:58', plate: 'B 1234 QR', type: 'Parkir Liar', loc: 'Bundaran HI', cctv: 'CAM-007', status: 'verified' },
+      { id: 'RPT-0838', time: '13:44', plate: 'D 5566 YZ', type: 'Ngetem', loc: 'Terminal Bekasi', cctv: 'CAM-014', status: 'rejected' },
+      { id: 'RPT-0837', time: '13:30', plate: 'B 7788 ST', type: 'Parkir Liar', loc: 'Jl. Thamrin', cctv: 'CAM-009', status: 'verified' },
+    ];
+
+    function populateReportTable() {
+      const tbody = document.getElementById('report-table-body');
+      if (!tbody || tbody.children.length > 0) return;
+      reportRows.forEach(r => {
+        tbody.innerHTML += `
+      <tr>
+        <td style="font-family:'Space Mono',monospace;color:var(--accent);font-size:0.7rem">${r.id}</td>
+        <td style="font-family:'Space Mono',monospace;font-size:0.72rem">${r.time}</td>
+        <td style="font-family:'Space Mono',monospace;color:var(--yellow);font-weight:700">${r.plate}</td>
+        <td>${r.type}</td>
+        <td>${r.loc}</td>
+        <td style="font-size:0.7rem;color:var(--text-dim)">Cross-ref ${r.cctv}</td>
+        <td><span class="status-badge status-${r.status}">${r.status}</span></td>
+      </tr>`;
+      });
+    }
+
+    // Handle photo capture
+    function handlePhoto(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const preview = document.getElementById('photoPreview');
+        preview.src = ev.target.result;
+        preview.style.display = 'block';
+        const zone = document.getElementById('captureZone');
+        zone.style.display = 'none';
+        const geoStatus = document.getElementById('geoStatus');
+        geoStatus.style.display = 'flex';
+        const lat = (-6.2 + Math.random() * 0.1).toFixed(4);
+        const lng = (106.8 + Math.random() * 0.2).toFixed(4);
+        document.getElementById('geoCoords').textContent = `${lat}, ${lng} · WIB ${new Date().toLocaleTimeString('id-ID')}`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function submitReport() {
+      const plate = document.getElementById('reportPlate').value;
+      const type = document.getElementById('reportType').value;
+      const loc = document.getElementById('reportLocation').value;
+      if (!type || !loc) { alert('Please fill in violation type and location.'); return; }
+      alert(`✅ Report submitted!\n\nPlate: ${plate || 'Unknown'}\nType: ${type}\nLocation: ${loc}\n\nAI is now cross-referencing with nearest CCTV footage...`);
+    }
+
+    // ============================================================
+    // ANALYTICS CHARTS
+    // ============================================================
+    let analyticsInited = false;
+    function initAnalyticsCharts() {
+      if (analyticsInited) return; analyticsInited = true;
+      const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+      // Weekly trend
+      const weekCtx = document.getElementById('weeklyChart');
+      if (weekCtx) new Chart(weekCtx, {
+        type: 'bar', data: {
+          labels: days,
+          datasets: [
+            { label: 'Parkir Liar', data: [42, 55, 48, 72, 61, 38, 29], backgroundColor: 'rgba(255,59,92,0.7)', borderRadius: 4 },
+            { label: 'Busway Lane', data: [18, 24, 31, 27, 35, 15, 12], backgroundColor: 'rgba(255,107,53,0.7)', borderRadius: 4 },
+            { label: 'Ngetem', data: [9, 12, 8, 14, 10, 7, 5], backgroundColor: 'rgba(255,215,0,0.6)', borderRadius: 4 },
+          ]
+        },
+        options: {
+          plugins: { legend: { labels: { color: 'rgba(232,244,255,0.5)', font: { size: 10 }, boxWidth: 10 } } },
+          scales: {
+            x: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,255,0.4)' } },
+            y: { stacked: true, grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,255,0.4)' } }
+          }
+        }
+      });
+
+      // Heatmap
+      const heatmapEl = document.getElementById('hourHeatmap');
+      if (heatmapEl) {
+        const vals = [
+          [2, 3, 1, 0, 1, 4, 12, 25, 31, 28, 22, 19, 24, 30, 27, 22, 18, 15, 21, 18, 14, 10, 6, 3],
+          [1, 2, 1, 0, 0, 3, 10, 22, 28, 25, 20, 17, 22, 27, 24, 20, 16, 13, 19, 16, 12, 8, 5, 2],
+          [3, 2, 0, 0, 1, 5, 14, 28, 35, 30, 24, 20, 26, 32, 29, 24, 19, 16, 23, 20, 15, 11, 7, 4],
+          [2, 1, 1, 0, 0, 3, 11, 24, 30, 27, 21, 18, 23, 29, 26, 21, 17, 14, 20, 17, 13, 9, 6, 3],
+          [4, 3, 1, 0, 1, 6, 16, 30, 38, 34, 27, 22, 28, 35, 32, 26, 21, 18, 25, 22, 17, 13, 9, 5],
+          [5, 4, 2, 1, 2, 7, 18, 20, 22, 20, 18, 22, 28, 32, 28, 24, 20, 18, 22, 20, 16, 13, 10, 7],
+          [3, 2, 1, 0, 1, 4, 10, 12, 15, 14, 12, 16, 20, 22, 20, 18, 15, 14, 17, 15, 12, 10, 8, 5],
+        ];
+        const allVals = vals.flat(); const maxV = Math.max(...allVals);
+        let html = '<div class="heatmap-grid">';
+        for (let d = 0; d < 7; d++) {
+          for (let h = 0; h < 24; h++) {
+            const v = vals[d][h]; const pct = v / maxV;
+            const r = Math.floor(pct * 255); const g = Math.floor(pct * 107);
+            const col = `rgba(${r},${g},53,${0.2 + pct * 0.8})`;
+            html += `<div class="heatmap-cell" style="background:${col}" title="${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d]} ${h}:00 — ${v} violations"></div>`;
+          }
+        }
+        html += '</div>';
+        heatmapEl.innerHTML = html;
+      }
+
+      // Hotspot bar
+      const hotCtx = document.getElementById('hotspotChart');
+      if (hotCtx) new Chart(hotCtx, {
+        type: 'bar', data: {
+          labels: ['Jl. Gatot Subroto', 'Bundaran HI', 'HR Rasuna Said', 'Cikarang Industrial', 'Cikarang Dry Port', 'Bekasi Timur', 'Jl. Sudirman', 'Jl. Thamrin', 'Jl. Pemuda', 'Jl. TB Simatupang'],
+          datasets: [{
+            data: [87, 71, 65, 58, 44, 39, 35, 29, 22, 18],
+            backgroundColor: ctx => {
+              const v = ctx.dataset.data[ctx.dataIndex];
+              return v > 60 ? 'rgba(255,59,92,0.75)' : v > 40 ? 'rgba(255,107,53,0.75)' : 'rgba(255,215,0,0.7)';
+            },
+            borderRadius: 4
+          }]
+        },
+        options: {
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,255,0.4)', font: { size: 9 } } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: 'rgba(232,244,255,0.4)' } }
+          }
+        }
+      });
+
+      // Demographics Doughnut
+      const demoCtx = document.getElementById('demoChart');
+      if (demoCtx) new Chart(demoCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Motorcycles', 'Cars', 'Angkot', 'Trucks', 'Buses'],
+          datasets: [{
+            data: [45, 30, 15, 7, 3],
+            backgroundColor: [
+              'rgba(0, 212, 255, 0.8)',
+              'rgba(255, 107, 53, 0.8)',
+              'rgba(255, 215, 0, 0.8)',
+              'rgba(255, 59, 92, 0.8)',
+              'rgba(76, 175, 80, 0.8)'
+            ],
+            borderWidth: 1,
+            borderColor: 'var(--bg-card)'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'right',
+              labels: { color: 'rgba(232, 244, 255, 0.7)', font: { size: 11 }, padding: 15 }
+            }
+          },
+          cutout: '70%'
+        }
+      });
+    }
+
+    // Init dashboard charts on load since it's the first active page
+    setTimeout(initDashboardCharts, 100);
+  </script>
+  <!-- MODAL -->
+  <div class="monitor-modal" id="feedModal" onclick="this.style.display='none'">
+    <div class="monitor-modal-content" onclick="event.stopPropagation()">
+      <div class="monitor-header">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="status-dot" style="background:var(--red);animation:none"></div>
+          <span
+            style="font-family:'Space Mono',monospace;color:var(--accent);font-size:0.9rem;letter-spacing:1px;font-weight:700">AI
+            VALIDATION TARGET // CAM-001</span>
+        </div>
+        <button class="monitor-close" onclick="document.getElementById('feedModal').style.display='none'">×</button>
+      </div>
+      <div class="monitor-body">
+        <img src="image/1.webp" alt="YOLO Zoom">
+        <div class="monitor-scanline"></div>
+      </div>
+      <div class="monitor-footer">
+        <div>
+          <div style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px">DETECTED PLATE</div>
+          <div style="font-family:'Orbitron',monospace;color:var(--yellow);font-size:1.2rem;font-weight:700">B 3421 XY
+          </div>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px">VIOLATION TYPE</div>
+          <div style="font-family:'Space Mono',monospace;color:var(--red);font-size:1.1rem;font-weight:700">PARKIR LIAR
+            / ILLEGAL PARKING</div>
+        </div>
+        <div>
+          <div style="font-size:0.6rem;color:var(--text-dim);letter-spacing:1px">CONFIDENCE SCORE</div>
+          <div style="font-family:'Orbitron',monospace;color:var(--green);font-size:1.2rem;font-weight:700">98.4%</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
+
 </html>
